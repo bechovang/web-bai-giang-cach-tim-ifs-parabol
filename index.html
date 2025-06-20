@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài giảng tương tác: IFS cho Cung Parabol</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body { overflow-x: hidden; }
+        .lecture-block { background-color: #e0f2fe; /* light blue */ }
+        .lecture-example { background-color: #d1fae5; /* light green */ }
+        .lecture-alert { background-color: #fef3c7; /* light yellow */ }
+        .sticky-audio { position: -webkit-sticky; position: sticky; top: 0; z-index: 10; }
+        @media (max-width: 768px) {
+            .md\:grid-cols-2 { grid-template-columns: 1fr; }
+            .md\:h-screen { height: auto; }
+            .md\:overflow-y-auto { overflow-y: visible; }
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* Trạng thái khả vi */
+        .differentiable-c1 { background-color: #e0f8e0; border-color: #5cb85c; color: #3c763d; }
+        .differentiable-ae { background-color: #fcf8e3; border-color: #f0ad4e; color: #8a6d3b; }
+        .not-differentiable-parabola { background-color: #f8e0e0; border-color: #d9534f; color: #a94442; }
+        .status-box { padding: 0.75rem; border-radius: 0.375rem; font-weight: bold; text-align: center; border-width: 1px; border-style: solid; }
+
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <div class="md:grid md:grid-cols-2 md:h-screen">
+        <!-- Cột Trái: Bài giảng & Tài liệu -->
+        <div class="p-6 md:overflow-y-auto custom-scrollbar">
+            <div class="mb-8 p-4 bg-white rounded-lg shadow">
+                <h2 class="text-2xl font-bold mb-3 text-blue-600">Tài liệu Bổ trợ</h2>
+                <div class="aspect-w-16 aspect-h-9 mb-4">
+                    <iframe id="youtubePlayer" class="rounded-md" width="100%" height="315" src="" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+                <div class="flex space-x-4">
+                    <a id="theoryLink" href="#" target="_blank" class="flex-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-center">
+                        Học Lý thuyết
+                    </a>
+                    <a id="exerciseLink" href="#" target="_blank" class="flex-1 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-center">
+                        BT tương ứng
+                    </a>
+                </div>
+            </div>
+            <div id="lectureContent" class="space-y-6">
+                <!-- Nội dung bài giảng -->
+            </div>
+        </div>
+
+        <!-- Cột Phải: Tương tác & Âm thanh -->
+        <div class="p-6 md:overflow-y-auto custom-scrollbar">
+            <div class="sticky-audio bg-white p-4 rounded-lg shadow mb-8">
+                <h2 class="text-2xl font-bold mb-3 text-indigo-600">Âm thanh Bài giảng</h2>
+                <audio id="audioPlayer" controls class="w-full">
+                    <source src="audio.wav" type="audio/wav">
+                    Trình duyệt của bạn không hỗ trợ phần tử audio.
+                </audio>
+                <div class="mt-2">
+                    <label for="audioUpload" class="block text-sm font-medium text-gray-700">Hoặc tải lên tệp âm thanh khác (mp3, wav, ogg):</label>
+                    <input type="file" id="audioUpload" accept="audio/*" class="mt-1 block w-full text-sm text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-full file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-indigo-50 file:text-indigo-700
+                        hover:file:bg-indigo-100
+                    ">
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-2xl font-bold mb-4 text-purple-600">Mô phỏng IFS cho Cung Parabol</h2>
+                
+                <div class="mb-6">
+                    <label for="lambda1Slider" class="block text-sm font-medium text-gray-700">Chọn giá trị cho \(\lambda_1\):
+                        <span id="lambda1Value" class="font-bold text-purple-700">0.5</span>
+                    </label>
+                    <input type="range" id="lambda1Slider" min="0.38197" max="0.61803" step="0.00001" value="0.5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    <p class="text-xs text-gray-500 mt-1">Khoảng hợp lệ: \(\frac{3-\sqrt{5}}{2} \approx 0.38197 \le \lambda_1 \le \frac{-1+\sqrt{5}}{2} \approx 0.61803\)</p>
+                </div>
+
+                <div class="mb-4">
+                    <button id="calculateIFS" class="w-full bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
+                        Tính toán IFS & Vẽ Parabol
+                    </button>
+                </div>
+
+                <div id="results" class="space-y-4">
+                    <h3 class="text-xl font-semibold text-gray-700">Các tham số của IFS:</h3>
+                    <div id="paramsDisplay" class="grid grid-cols-2 gap-4 text-sm p-4 bg-purple-50 rounded-md">
+                        <!-- JS sẽ chèn các tham số vào đây -->
+                    </div>
+
+                    <h3 class="text-xl font-semibold text-gray-700 mt-4">Hàm Affine \(f_1\) và \(f_2\):</h3>
+                     <div id="functionsDisplay" class="p-4 bg-indigo-50 rounded-md text-sm">
+                        <!-- JS sẽ chèn các hàm vào đây -->
+                    </div>
+                    
+                    <h3 class="text-xl font-semibold text-gray-700 mt-4">Điểm nối \(z\):</h3>
+                    <div id="connectionPointDisplay" class="p-2 bg-green-50 rounded-md text-sm">
+                        <!-- JS sẽ chèn điểm nối vào đây -->
+                    </div>
+
+                    <h3 class="text-xl font-semibold text-gray-700 mt-4">Đánh giá khả vi:</h3>
+                    <div id="differentiabilityStatus" class="status-box">
+                        <!-- JS sẽ cập nhật trạng thái khả vi -->
+                    </div>
+                     <p id="c1ConditionCheck" class="text-xs text-center font-mono mt-1"></p>
+
+
+                    <h3 class="text-xl font-semibold text-gray-700 mt-4">Trực quan hóa Cung Parabol:</h3>
+                    <div id="canvasDescription" class="text-xs text-gray-500 mb-2">
+                        <!-- JS sẽ chèn mô tả canvas vào đây -->
+                    </div>
+                    <canvas id="parabolaCanvas" width="400" height="400" class="border border-gray-300 rounded-md mx-auto block"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- SCRIPT BÀI GIẢNG (Đã sửa cú pháp LaTeX) ---
+        const lectureScriptContent = `
+Dựa trên bài báo bạn cung cấp, đặc biệt là Định lý 3 (ii) và Ví dụ 16, các đường cong tự afin bậc hai khả vi liên tục hai lần (C²) trong mặt phẳng, ngoại trừ đoạn thẳng, chính là các cung parabol. Do đó, việc tìm hệ hàm lặp (Iterated Function System - IFS) gồm 2 hàm cho một "đường cong bậc 2" thực chất là tìm IFS cho một cung parabol.
+
+---SLIDE_BREAK---
+
+**Mục tiêu bài học:**
+* Hiểu rằng đường cong tự afin C² (không phải đoạn thẳng) trong mặt phẳng là cung parabol.
+* Nắm được phương pháp xây dựng IFS gồm 2 hàm cho một cung parabol dựa trên bài báo "DIFFERENTIABILITY OF FRACTAL CURVES".
+* Làm quen với hệ tọa độ đặc biệt và các ký hiệu được sử dụng trong bài báo.
+
+---SLIDE_BREAK---
+
+**Bước 1: Xác định cung Parabol và Hệ tọa độ**
+<div class="lecture-block p-4 rounded-md my-2">
+Chúng ta sẽ làm việc với cung parabol có điểm đầu \\(e_1 = (w_1=1, w_2=0)\\) và điểm cuối \\(e_2 = (w_1=0, w_2=1)\\). Hệ tọa độ này được xoay 45 độ so với hệ Descartes thông thường.
+</div>
+Phương trình của cung parabol này trong hệ tọa độ \\((w_1, w_2)\\) của bài báo là:
+$$ \\sqrt{w_1} + \\sqrt{w_2} = 1 $$
+Các hàm afin \\(f_1\\) và \\(f_2\\) sẽ có dạng tổng quát như trong phương trình (1) của bài báo (thay \\(x\\) bằng \\(w\\)):
+$$ f_1(w) = \\begin{pmatrix} \\lambda_1 & \\alpha \\\\ 0 & \\nu_1 \\end{pmatrix} w + \\begin{pmatrix} 1-\\lambda_1 \\\\ 0 \\end{pmatrix} $$
+$$ f_2(w) = \\begin{pmatrix} \\nu_2 & 0 \\\\ \\beta & \\lambda_2 \\end{pmatrix} w + \\begin{pmatrix} 0 \\\\ 1-\\lambda_2 \\end{pmatrix} $$
+Trong đó \\(w = \\begin{pmatrix} w_1 \\\\ w_2 \\end{pmatrix}\\).
+
+---SLIDE_BREAK---
+
+**Bước 2: Áp dụng điều kiện cho Parabol (Từ Ví dụ 16)**
+<div class="lecture-example p-4 rounded-md my-2">
+Để đường cong là một cung parabol trong hệ tọa độ này, các tham số (giá trị riêng) phải thỏa mãn (theo Ví dụ 16 của bài báo):
+<ol class="list-decimal list-inside ml-4">
+    <li>\\(\\lambda_1 + \\lambda_2 = 1\\)</li>
+    <li>\\(\\nu_1 = \\lambda_2^2\\)</li>
+    <li>\\(\\nu_2 = \\lambda_1^2\\)</li>
+</ol>
+</div>
+Đồng thời, các điều kiện chung cho các đường cong tự afin hai mảnh được nghiên cứu vẫn phải được đảm bảo:
+<ul class="list-disc list-inside ml-4">
+    <li>\\(0 < \\nu_i \\le \\lambda_i < 1\\) cho \\(i = 1, 2\\).</li>
+    <li>\\(\\alpha = \\nu_2 + \\lambda_1 - 1\\)</li>
+    <li>\\(\\beta = \\nu_1 + \\lambda_2 - 1\\)</li>
+</ul>
+
+---SLIDE_BREAK---
+
+**Bước 3: Chọn một tham số tự do**
+<div class="lecture-block p-4 rounded-md my-2">
+Chúng ta có thể chọn \\(\\lambda_1\\) (hoặc \\(\\lambda_2\\)) làm tham số tự do.
+Từ \\(\\lambda_1 + \\lambda_2 = 1\\), nếu bạn chọn \\(\\lambda_1\\), thì \\(\\lambda_2 = 1 - \\lambda_1\\).
+</div>
+<div class="lecture-alert p-4 rounded-md my-2">
+<strong>Ràng buộc quan trọng:</strong>
+Để đảm bảo các điều kiện \\(0 < \\nu_i \\le \\lambda_i < 1\\), \\(\\lambda_1\\) phải nằm trong một khoảng nhất định.
+<ul class="list-disc list-inside ml-4">
+    <li>Điều kiện \\(0 < \\lambda_i < 1\\) yêu cầu \\(0 < \\lambda_1 < 1\\).</li>
+    <li>Điều kiện \\(\\nu_1 = \\lambda_2^2 \\le \\lambda_1 \\Rightarrow (1-\\lambda_1)^2 \\le \\lambda_1 \\Rightarrow \\lambda_1^2 - 3\\lambda_1 + 1 \\le 0\\).
+        Nghiệm của \\(x^2 - 3x + 1 = 0\\) là \\(x = \\frac{3 \\pm \\sqrt{5}}{2}\\).
+        Vậy \\(\\frac{3 - \\sqrt{5}}{2} \\le \\lambda_1 \\le \\frac{3 + \\sqrt{5}}{2}\\).</li>
+    <li>Điều kiện \\(\\nu_2 = \\lambda_1^2 \\le \\lambda_2 \\Rightarrow \\lambda_1^2 \\le 1 - \\lambda_1 \\Rightarrow \\lambda_1^2 + \\lambda_1 - 1 \\le 0\\).
+        Nghiệm của \\(x^2 + x - 1 = 0\\) là \\(x = \\frac{-1 \\pm \\sqrt{5}}{2}\\).
+        Vậy \\(\\frac{-1 - \\sqrt{5}}{2} \\le \\lambda_1 \\le \\frac{-1 + \\sqrt{5}}{2}\\).</li>
+</ul>
+Kết hợp các ràng buộc trên và \\(0 < \\lambda_1 < 1\\):
+$$ \\frac{3 - \\sqrt{5}}{2} \\le \\lambda_1 \\le \\frac{-1 + \\sqrt{5}}{2} $$
+Xấp xỉ: \\(0.38197 \\le \\lambda_1 \\le 0.61803\\).
+Bạn có thể chọn một giá trị \\(\\lambda_1\\) trong khoảng này. Ví dụ: \\(\\lambda_1 = 0.5\\) (cho parabol đối xứng nhất) hoặc \\(\\lambda_1 = 0.4\\).
+</div>
+
+---SLIDE_BREAK---
+
+**Bước 4: Tính toán các tham số còn lại**
+Khi đã chọn \\(\\lambda_1\\):
+<ol class="list-decimal list-inside ml-4">
+    <li>\\(\\lambda_2 = 1 - \\lambda_1\\)</li>
+    <li>\\(\\nu_1 = \\lambda_2^2 = (1 - \\lambda_1)^2\\)</li>
+    <li>\\(\\nu_2 = \\lambda_1^2\\)</li>
+</ol>
+Tính \\(\\alpha\\) và \\(\\beta\\):
+<ul class="list-disc list-inside ml-4">
+    <li>\\(\\alpha = \\nu_2 + \\lambda_1 - 1 = \\lambda_1^2 + \\lambda_1 - 1\\)</li>
+    <li>\\(\\beta = \\nu_1 + \\lambda_2 - 1 = (1 - \\lambda_1)^2 + (1 - \\lambda_1) - 1\\)</li>
+</ul>
+<div class="lecture-alert p-4 rounded-md my-2">
+<strong>Lưu ý về các điều kiện phụ (liên quan đến tính chất của đường cong):</strong>
+<ul class="list-disc list-inside ml-4">
+    <li>Điều kiện \\(\\nu_1 + \\nu_2 < 1\\) (để đường cong không có điểm kép, theo Mục 3 bài báo) tương đương \\(\\lambda_1^2 + \\lambda_2^2 < 1\\). Vì \\(\\lambda_1+\\lambda_2=1\\), nên \\(\\lambda_1^2+\\lambda_2^2 = 1 - 2\\lambda_1\\lambda_2\\). Điều kiện trở thành \\(1 - 2\\lambda_1\\lambda_2 < 1\\), tức \\(\\lambda_1\\lambda_2 > 0\\), điều này luôn đúng khi \\(0 < \\lambda_i < 1\\).</li>
+    <li>Điều kiện \\(\\alpha \\le 0\\) và \\(\\beta \\le 0\\) (để đường cong là đồ thị của một hàm đơn điệu giảm trong hệ tọa độ đó, theo Mục 3, Proposition 9 bài báo). Điều kiện \\(\\lambda_1^2 + \\lambda_1 - 1 \\le 0\\) chính là \\(\\alpha \\le 0\\), và điều này đã được bao gồm trong ràng buộc của \\(\\lambda_1\\) ở Bước 3. Tương tự cho \\(\\beta \\le 0\\). Đối với cung parabol đang xét, điều này luôn được thỏa mãn do ràng buộc của \\(\\lambda_1\\).</li>
+</ul>
+</div>
+
+---SLIDE_BREAK---
+
+**Bước 5: Viết tường minh hai hàm số afin**
+Thay các giá trị \\(\\lambda_1, \\nu_1, \\alpha\\) và \\(\\lambda_2, \\nu_2, \\beta\\) đã tính được vào công thức của \\(f_1\\) và \\(f_2\\):
+<p class="font-mono my-2">
+\\(f_1(w_1, w_2) = (\\lambda_1 w_1 + \\alpha w_2 + (1 - \\lambda_1), \\nu_1 w_2)\\)
+</p>
+<p class="font-mono my-2">
+\\(f_2(w_1, w_2) = (\\nu_2 w_1, \\beta w_1 + \\lambda_2 w_2 + (1 - \\lambda_2))\\)
+</p>
+Hoặc viết dưới dạng ma trận:
+$$ f_1\\left( \\begin{pmatrix} w_1 \\\\ w_2 \\end{pmatrix} \\right) = \\begin{pmatrix} \\lambda_1 & \\alpha \\\\ 0 & \\nu_1 \\end{pmatrix} \\begin{pmatrix} w_1 \\\\ w_2 \\end{pmatrix} + \\begin{pmatrix} 1-\\lambda_1 \\\\ 0 \\end{pmatrix} $$
+$$ f_2\\left( \\begin{pmatrix} w_1 \\\\ w_2 \\end{pmatrix} \\right) = \\begin{pmatrix} \\nu_2 & 0 \\\\ \\beta & \\lambda_2 \\end{pmatrix} \\begin{pmatrix} w_1 \\\\ w_2 \\end{pmatrix} + \\begin{pmatrix} 0 \\\\ 1-\\lambda_2 \\end{pmatrix} $$
+
+---SLIDE_BREAK---
+
+**Ví dụ:**
+<div class="lecture-example p-4 rounded-md my-2">
+Chọn \\(\\lambda_1 = 0.5\\) (trường hợp đối xứng nhất, \\(\\lambda_i = 1/2, \\nu_i = 1/4\\) như trong Ví dụ 16).
+<ol class="list-decimal list-inside ml-4">
+    <li>\\(\\lambda_1 = 0.5\\)</li>
+    <li>\\(\\lambda_2 = 1 - 0.5 = 0.5\\)</li>
+    <li>\\(\\nu_1 = (0.5)^2 = 0.25\\)</li>
+    <li>\\(\\nu_2 = (0.5)^2 = 0.25\\)</li>
+    <li>\\(\\alpha = (0.5)^2 + 0.5 - 1 = 0.25 + 0.5 - 1 = -0.25\\)</li>
+    <li>\\(\\beta = (0.5)^2 + 0.5 - 1 = 0.25 + 0.5 - 1 = -0.25\\)</li>
+</ol>
+Vậy hai hàm số là:
+<p class="font-mono my-1">\\(f_1(w_1, w_2) = (0.5 w_1 - 0.25 w_2 + 0.5, 0.25 w_2)\\)</p>
+<p class="font-mono my-1">\\(f_2(w_1, w_2) = (0.25 w_1, -0.25 w_1 + 0.5 w_2 + 0.5)\\)</p>
+Điểm nối \\(z = f_1(e_2) = f_2(e_1)\\). Theo bài báo (Mục 3), tọa độ điểm nối \\(z\\) là \\((\\nu_2, \\nu_1)\\).
+Trong ví dụ trên, \\(z = (0.25, 0.25)\\).
+Kiểm tra lại:
+<p class="font-mono my-1">\\(f_1(0,1) = (0.5 \\cdot 0 - 0.25 \\cdot 1 + 0.5, 0.25 \\cdot 1) = (-0.25+0.5, 0.25) = (0.25, 0.25)\\)</p>
+<p class="font-mono my-1">\\(f_2(1,0) = (0.25 \\cdot 1, -0.25 \\cdot 1 + 0.5 \\cdot 0 + 0.5) = (0.25, -0.25+0.5) = (0.25, 0.25)\\)</p>
+Điểm \\((0.25, 0.25)\\) nằm trên parabol \\(\\sqrt{w_1} + \\sqrt{w_2} = 1\\) vì \\(\\sqrt{0.25} + \\sqrt{0.25} = 0.5 + 0.5 = 1\\).
+</div>
+<div class="lecture-block p-4 rounded-md my-2">
+Đây là quy trình tổng quát để tìm IFS gồm 2 hàm cho một cung parabol dựa trên các kết quả trong bài báo. Bạn có thể chọn các giá trị \\(\\lambda_1\\) khác nhau trong khoảng hợp lệ để tạo ra các IFS khác nhau cho cùng một dạng cung parabol (nhưng với các điểm nối khác nhau và tỷ lệ co khác nhau cho mỗi hàm).
+</div>
+        `;
+
+        // --- PHẦN CODE JS CÒN LẠI ---
+        const lectureContainer = document.getElementById('lectureContent');
+        const slides = lectureScriptContent.split('---SLIDE_BREAK---');
+
+        slides.forEach((slideContent, index) => {
+            const slideDiv = document.createElement('div');
+            slideDiv.classList.add('p-6', 'bg-white', 'rounded-lg', 'shadow', 'mb-6');
+            
+            const title = document.createElement('h3');
+            title.classList.add('text-xl', 'font-semibold', 'mb-3', 'text-gray-700');
+            const lines = slideContent.trim().split('\n');
+            const firstLine = lines[0];
+            
+            if (firstLine.startsWith('**') && firstLine.endsWith('**')) {
+                title.textContent = firstLine.substring(2, firstLine.length - 2);
+                slideContent = lines.slice(1).join('\n').trim();
+            } else if (firstLine.includes(':') && firstLine.length < 60 && !firstLine.includes('\\(') && !firstLine.includes('$$')) {
+                 title.textContent = firstLine;
+                 slideContent = lines.slice(1).join('\n').trim();
+            }
+            else {
+                title.textContent = `Phần ${index + 1}`;
+            }
+            slideDiv.appendChild(title);
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.classList.add('text-gray-700', 'leading-relaxed'); 
+            
+            let processedContent = slideContent.replace(/<div class="lecture-block.*?>([\s\S]*?)<\/div>/g, (match, innerContent) => {
+                return `<div class="lecture-block p-4 rounded-md my-2">${innerContent.trim()}</div>`;
+            });
+            processedContent = processedContent.replace(/<div class="lecture-example.*?>([\s\S]*?)<\/div>/g, (match, innerContent) => {
+                return `<div class="lecture-example p-4 rounded-md my-2">${innerContent.trim()}</div>`;
+            });
+            processedContent = processedContent.replace(/<div class="lecture-alert.*?>([\s\S]*?)<\/div>/g, (match, innerContent) => {
+                return `<div class="lecture-alert p-4 rounded-md my-2">${innerContent.trim()}</div>`;
+            });
+
+            contentDiv.innerHTML = processedContent;
+            slideDiv.appendChild(contentDiv);
+            lectureContainer.appendChild(slideDiv);
+        });
+        
+        function typesetMathJax(element) {
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise(element ? [element] : undefined);
+            } else if (window.MathJax && window.MathJax.startup && window.MathJax.startup.promise) {
+                 window.MathJax.startup.promise.then(() => {
+                    window.MathJax.typesetPromise(element ? [element] : undefined);
+                 });
+            }
+        }
+        typesetMathJax(); 
+
+        const audioPlayer = document.getElementById('audioPlayer');
+        const audioUpload = document.getElementById('audioUpload');
+        audioUpload.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    audioPlayer.src = e.target.result;
+                    audioPlayer.load();
+                    audioPlayer.play().catch(error => console.log("Autoplay prevented:", error));
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        const youtubePlayer = document.getElementById('youtubePlayer');
+        const theoryLink = document.getElementById('theoryLink');
+        const exerciseLink = document.getElementById('exerciseLink');
+
+        fetch('link.json')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.youtubeLink) {
+                    let videoId = '';
+                    const url = data.youtubeLink;
+                    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                    const match = url.match(regExp);
+                    if (match && match[2].length === 11) videoId = match[2];
+                    else console.error("Invalid YouTube URL in link.json:", url);
+                    if (videoId) youtubePlayer.src = `https://www.youtube.com/embed/${videoId}`;
+                    else youtubePlayer.parentElement.innerHTML = '<p class="text-red-500">Lỗi: Định dạng link YouTube không hợp lệ trong link.json.</p>';
+                } else {
+                     youtubePlayer.parentElement.innerHTML = '<p class="text-gray-500">Không có video YouTube được cung cấp trong link.json.</p>';
+                }
+                theoryLink.href = data.theoryLink || "#";
+                exerciseLink.href = data.exerciseLink || "#";
+                if (!data.theoryLink) theoryLink.classList.add("opacity-50", "cursor-not-allowed");
+                if (!data.exerciseLink) exerciseLink.classList.add("opacity-50", "cursor-not-allowed");
+            })
+            .catch(error => {
+                console.error('Error fetching or parsing link.json:', error);
+                youtubePlayer.parentElement.innerHTML = '<p class="text-red-500">Lỗi tải link.json. Hãy đảm bảo tệp tồn tại và có định dạng JSON hợp lệ.</p>';
+                theoryLink.href = "#"; theoryLink.textContent = "Lý thuyết (Lỗi)";
+                exerciseLink.href = "#"; exerciseLink.textContent = "Bài tập (Lỗi)";
+                theoryLink.classList.add("opacity-50", "cursor-not-allowed");
+                exerciseLink.classList.add("opacity-50", "cursor-not-allowed");
+            });
+
+        const lambda1Slider = document.getElementById('lambda1Slider');
+        const lambda1ValueDisplay = document.getElementById('lambda1Value');
+        const calculateButton = document.getElementById('calculateIFS');
+        const canvas = document.getElementById('parabolaCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const paramsDisplay = document.getElementById('paramsDisplay');
+        const functionsDisplay = document.getElementById('functionsDisplay');
+        const connectionPointDisplay = document.getElementById('connectionPointDisplay');
+        const canvasDescription = document.getElementById('canvasDescription');
+        const differentiabilityStatusEl = document.getElementById('differentiabilityStatus');
+        const c1ConditionCheckEl = document.getElementById('c1ConditionCheck');
+        const C1_EPSILON = 0.002; // Ngưỡng dung sai cho điều kiện C¹
+
+
+        lambda1Slider.addEventListener('input', () => {
+            lambda1ValueDisplay.textContent = parseFloat(lambda1Slider.value).toFixed(5);
+        });
+
+        calculateButton.addEventListener('click', () => {
+            const l1 = parseFloat(lambda1Slider.value);
+            
+            const l2 = 1 - l1;
+            const n1 = l2 * l2; // nu1
+            const n2 = l1 * l1; // nu2
+            const alpha = n2 + l1 - 1;
+            const beta = n1 + l2 - 1;
+
+            paramsDisplay.innerHTML = `
+                <p>\\(\\lambda_1 = ${l1.toFixed(5)}\\)</p>
+                <p>\\(\\lambda_2 = ${l2.toFixed(5)}\\)</p>
+                <p>\\(\\nu_1 = ${n1.toFixed(5)}\\)</p>
+                <p>\\(\\nu_2 = ${n2.toFixed(5)}\\)</p>
+                <p>\\(\\alpha = ${alpha.toFixed(5)}\\)</p>
+                <p>\\(\\beta = ${beta.toFixed(5)}\\)</p>
+            `;
+            
+            functionsDisplay.innerHTML = `
+                <p>\\(f_1(w_1, w_2) = (${l1.toFixed(5)} w_1 + ${alpha.toFixed(5)} w_2 + ${(1 - l1).toFixed(5)}, ${n1.toFixed(5)} w_2)\\)</p>
+                <p class="mt-1">Hoặc \\(f_1\\left(\\begin{pmatrix} w_1 \\\\ w_2 \\end{pmatrix}\\right) = \\begin{pmatrix} ${l1.toFixed(5)} & ${alpha.toFixed(5)} \\\\ 0 & ${n1.toFixed(5)} \\end{pmatrix} \\begin{pmatrix} w_1 \\\\ w_2 \\end{pmatrix} + \\begin{pmatrix} ${(1 - l1).toFixed(5)} \\\\ 0 \\end{pmatrix}\\)</p>
+                
+                <p class="mt-3">\\(f_2(w_1, w_2) = (${n2.toFixed(5)} w_1, ${beta.toFixed(5)} w_1 + ${l2.toFixed(5)} w_2 + ${(1-l2).toFixed(5)})\\)</p>
+                <p class="mt-1">Hoặc \\(f_2\\left(\\begin{pmatrix} w_1 \\\\ w_2 \\end{pmatrix}\\right) = \\begin{pmatrix} ${n2.toFixed(5)} & 0 \\\\ ${beta.toFixed(5)} & ${l2.toFixed(5)} \\end{pmatrix} \\begin{pmatrix} w_1 \\\\ w_2 \\end{pmatrix} + \\begin{pmatrix} 0 \\\\ ${(1-l2).toFixed(5)} \\end{pmatrix}\\)</p>
+            `;
+
+            connectionPointDisplay.innerHTML = `
+                <p>\\(z = (\\nu_2, \\nu_1) = (${n2.toFixed(5)}, ${n1.toFixed(5)})\\)</p>
+            `;
+
+            canvasDescription.innerHTML = `
+                <span>Đường cong được vẽ bằng thuật toán Chaos Game. </span>
+                <span>Các điểm do \\(f_1\\) tạo ra có màu <span class="font-bold text-red-600">đỏ</span>.</span>
+                <span>Các điểm do \\(f_2\\) tạo ra có màu <span class="font-bold text-green-600">xanh lá</span>.</span>
+                <br>
+                <span>Trục \\(w_1\\) ngang, \\(w_2\\) dọc. Gốc (0,0) ở góc dưới trái.</span>
+            `;
+
+            // Đánh giá khả vi
+            // Đối với cung Parabol theo định nghĩa này, điều kiện alpha <= 0 và beta <= 0 luôn được thỏa do ràng buộc của lambda1.
+            // (lambda1^2 + lambda1 - 1 <= 0) and ((1-lambda1)^2 + (1-lambda1) - 1 <= 0)
+            // Vì vậy, đường cong Parabol này sẽ luôn "khả vi hầu khắp nơi" hoặc "C1".
+            // Chúng ta chỉ cần kiểm tra điều kiện C1.
+            
+            const v1v2 = n1 * n2;
+            const alpha_beta_product = alpha * beta; // Product of alpha and beta from the paper
+            
+            c1ConditionCheckEl.innerHTML = `Điều kiện C¹: \\(\\nu_1\\nu_2 \\approx ${v1v2.toFixed(5)}\\), \\((1-\\lambda_1-\\nu_2)(1-\\lambda_2-\\nu_1) = \\alpha_{paper} \\beta_{paper} \\approx ${alpha_beta_product.toFixed(5)}\\)`;
+
+
+            if (alpha < 0 && beta < 0) { // Should always be true for parabola within lambda1 range
+                if (Math.abs(v1v2 - alpha_beta_product) < C1_EPSILON) {
+                    differentiabilityStatusEl.textContent = 'Khả vi liên tục (C¹)';
+                    differentiabilityStatusEl.className = 'status-box differentiable-c1';
+                } else {
+                    differentiabilityStatusEl.textContent = 'Khả vi hầu khắp nơi';
+                    differentiabilityStatusEl.className = 'status-box differentiable-ae';
+                }
+            } else {
+                // This case should not happen for the parabola with current lambda1 constraints.
+                // It's based on the general Theorem 2 for two-piece self-affine curves.
+                differentiabilityStatusEl.textContent = 'Không khả vi trên tập đáng kể (α hoặc β ≥ 0)';
+                differentiabilityStatusEl.className = 'status-box not-differentiable-parabola';
+            }
+
+
+            typesetMathJax(document.getElementById('results')); // Chỉ typeset lại phần results
+            drawParabola(l1, n1, alpha, l2, n2, beta);
+        });
+
+        function drawParabola(l1, n1, alpha_param, l2, n2, beta_param) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const numPoints = 50000;
+            let w1_coord = Math.random(); // Use different var name to avoid conflict
+            let w2_coord = Math.random();
+
+            const color_f1 = 'rgba(220, 38, 38, 0.7)'; 
+            const color_f2 = 'rgba(5, 150, 105, 0.7)';
+
+            const transform_f1 = (cw1, cw2) => {
+                return {
+                    nw1: l1 * cw1 + alpha_param * cw2 + (1 - l1),
+                    nw2: n1 * cw2
+                };
+            };
+
+            const transform_f2 = (cw1, cw2) => {
+                return {
+                    nw1: n2 * cw1,
+                    nw2: beta_param * cw1 + l2 * cw2 + (1 - l2)
+                };
+            };
+            
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 0.5;
+            ctx.beginPath(); ctx.moveTo(0, canvas.height); ctx.lineTo(canvas.width, canvas.height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, canvas.height); ctx.stroke();
+
+            ctx.font = "10px Arial";
+            ctx.fillStyle = 'blue';
+            ctx.beginPath(); ctx.arc(canvas.width, canvas.height, 3, 0, 2 * Math.PI); ctx.fill(); 
+            ctx.fillText("e₁(1,0)", canvas.width - 40, canvas.height - 5);
+            ctx.beginPath(); ctx.arc(0, 0, 3, 0, 2 * Math.PI); ctx.fill(); 
+            ctx.fillText("e₂(0,1)", 5, 15);
+
+            const z_w1_canvas = n2 * canvas.width;
+            const z_w2_canvas = canvas.height - (n1 * canvas.height);
+            ctx.fillStyle = 'orange';
+            ctx.beginPath(); ctx.arc(z_w1_canvas, z_w2_canvas, 4, 0, 2 * Math.PI); ctx.fill();
+            ctx.fillStyle = 'black';
+            ctx.fillText(`z(${n2.toFixed(2)},${n1.toFixed(2)})`, z_w1_canvas + 5, z_w2_canvas - 5);
+
+
+            for (let i = 0; i < numPoints; i++) {
+                let new_coords;
+                let chosen_f_is_f1;
+
+                if (Math.random() < 0.5) {
+                    new_coords = transform_f1(w1_coord, w2_coord);
+                    chosen_f_is_f1 = true;
+                } else {
+                    new_coords = transform_f2(w1_coord, w2_coord);
+                    chosen_f_is_f1 = false;
+                }
+                w1_coord = new_coords.nw1;
+                w2_coord = new_coords.nw2;
+
+                if (i > 100) { 
+                    ctx.fillStyle = chosen_f_is_f1 ? color_f1 : color_f2;
+                    const canvasX = w1_coord * canvas.width;
+                    const canvasY = canvas.height - (w2_coord * canvas.height);
+                    ctx.fillRect(canvasX, canvasY, 1, 1);
+                }
+            }
+        }
+        lambda1ValueDisplay.textContent = parseFloat(lambda1Slider.value).toFixed(5); 
+        calculateButton.click();
+    </script>
+</body>
+</html>
